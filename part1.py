@@ -44,7 +44,7 @@ class NPLM(object):
 		reg_output = tf.add(tf.nn.xw_plus_b(hidden_layer_output, U, b),tf.matmul(x_emb_expanded,W))
 
 		#Softmax layer
-		output_pred = tf.nn.softmax(reg_output)
+		output_pred = tf.squeeze(tf.nn.softmax(reg_output))
 
 		l2_loss = tf.constant(0.0)
 		l2_loss += tf.nn.l2_loss(H)
@@ -53,7 +53,7 @@ class NPLM(object):
 
 
 		# prediction and loss function
-		self.prediction = tf.argmax(output_pred, axis=[1], name="predictions")
+		self.prediction = tf.argmax(output_pred, axis=[0], name="predictions")
 		y_emb_pred = tf.nn.embedding_lookup(W_emb, self.prediction)
 
 		self.loss = tf.norm(tf.sub(y_emb,y_emb_pred)) + l2_loss
