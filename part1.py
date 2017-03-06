@@ -15,15 +15,15 @@ class NPLM(object):
 	def __init__(self, dictionary_size, emb_size=50, window_size=5, hidden_layer_size=100, learning_rate=0.01, l2_reg_lambda=0.01):
 
 		self.input  = tf.placeholder(tf.int32, [window_size], name="input")
-		self.output = tf.placeholder(tf.int32, [1], name="output")
+		self.output = tf.placeholder(tf.int32, name="output")
 		self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
 		
 		# Initialization
-		W_emb =  tf.Variable(tf.random_uniform([dictionary_size, emb_size], -1.0, +1.0))
+		self.W_emb =  tf.Variable(tf.random_uniform([dictionary_size, emb_size], -1.0, +1.0))
 		
 		# Embedding layer
-		x_emb = tf.nn.embedding_lookup(W_emb, self.input)				
-		y_emb = tf.nn.embedding_lookup(W_emb, self.output)
+		x_emb = tf.nn.embedding_lookup(self.W_emb, self.input)				
+		y_emb = tf.nn.embedding_lookup(self.W_emb, self.output)
 
 		x_emb = tf.reshape(x_emb,[-1])
 		x_emb_expanded = tf.expand_dims(x_emb,axis=0)
@@ -44,7 +44,7 @@ class NPLM(object):
 		reg_output = tf.add(tf.nn.xw_plus_b(hidden_layer_output, U, b),tf.matmul(x_emb_expanded,W))
 
 		#Softmax layer
-		output_pred = tf.squeeze(tf.nn.softmax(reg_output))
+		output_pred = (tf.nn.softmax(reg_output))
 
 		l2_loss = tf.constant(0.0)
 		l2_loss += tf.nn.l2_loss(H)
@@ -53,10 +53,10 @@ class NPLM(object):
 
 
 		# prediction and loss function
-		self.prediction = tf.argmax(output_pred, axis=[0], name="predictions")
-		y_emb_pred = tf.nn.embedding_lookup(W_emb, self.prediction)
+		self.prediction = tf.argmax(output_pred, axis=0, name="predictions")
+		y_emb_pred = tf.nn.embedding_lookup(self.W_emb, self.prediction)
 
-		self.loss = tf.norm(tf.sub(y_emb,y_emb_pred)) + l2_loss
+		self.loss = tf.norm(tf.subtract(y_emb,y_emb_pred)) + l2_loss
 
 		session_conf = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
 		self.sess = tf.Session(config=session_conf)  
@@ -67,7 +67,7 @@ class NPLM(object):
 		self.global_step = tf.Variable(0, name="global_step", trainable=False)
 		self.train_op = self.optimizer.apply_gradients(self.grads_and_vars, global_step=self.global_step)
 
-		self.sess.run(tf.initialize_all_variables())
+		self.sess.run(tf.global_variables_initializer())
 
 	def train_step(self, in_batch, out_batch):
     		feed_dict = {
@@ -75,9 +75,9 @@ class NPLM(object):
 				self.output: out_batch,
 				self.dropout_keep_prob: 0.5,
 	    			}
-   		step, loss, W_emb = self.sess.run([self.global_step, self.loss, W_emb], feed_dict)
-    		print ("step "+str(step) + " loss "+str(loss))
-    		return W_emb
+   		loss, W_e = self.sess.run([self.loss, self.W_emb], feed_dict)
+    		# print ("step "+str(step) + " loss "+str(loss))
+    		return W_e,loss
 
 
 
@@ -90,7 +90,7 @@ with open('./data/train_data.pickle', 'rb') as handle:
 
 
 nplm = NPLM(len(dictionary))
-no_of_epochs=1
+no_of_epochs=50
 
 W = []
 for j in xrange(no_of_epochs):
@@ -98,7 +98,8 @@ for j in xrange(no_of_epochs):
 		temp_list=[data[i], data[i+1], data[i+2], data[i+3], data[i+4]]
 		tmp_in=np.array(temp_list,dtype=np.int32)
 		tmp_out=data[i+5]
-		W = nplm.train_step(tmp_in,tmp_out)
+		W, loss = nplm.train_step(tmp_in,tmp_out)
+		print("Epoch",j+1,"Token",i,"Loss",loss)
 
 print (W[0])
 
