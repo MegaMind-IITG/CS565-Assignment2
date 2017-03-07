@@ -14,32 +14,29 @@ class Word2vec(object):
 
 	def __init__(self, dictionary_size, count, emb_size=50, window_size=5, neg_sample_size=10, learning_rate=0.01, l2_reg_lambda=0.01):
 
-		self.input  = tf.placeholder(tf.int32, [window_size], name="input")
-		self.output = tf.placeholder(tf.float32, name="output")
+		self.input  = tf.placeholder(tf.int32, [None,window_size], name="input")
+		self.output = tf.placeholder(tf.float32, [None], name="output")
 		
 		# Initialization
 		self.W_emb =  tf.Variable(tf.random_uniform([dictionary_size, emb_size], -1.0, +1.0))
 		
 		# Embedding layer
 		x_emb = tf.nn.embedding_lookup(self.W_emb, self.input)	
-		x_emb_in = tf.reduce_mean(x_emb,axis=0,keep_dims=True)
-
-		# print (x_emb.get_shape())
-		# print (y_emb.get_shape())
+		x_emb_in = tf.reduce_mean(x_emb,axis=1,keep_dims=False)
 
 		# Hidden layer
 		W = tf.Variable(tf.truncated_normal([dictionary_size, emb_size],stddev=1.0 / math.sqrt(emb_size)))
 		b = tf.Variable(tf.zeros([dictionary_size]))
 
 		# Negative sampling
-		neg_sample = tf.nn.fixed_unigram_candidate_sampler(tf.expand_dims(tf.to_int64(self.output),axis=0), 1, neg_sample_size, True, 
-			dictionary_size, distortion=1.0, num_reserved_ids=0, num_shards=1, shard=0, unigrams=count, seed=None, name=None)
+		neg_sample = tf.nn.fixed_unigram_candidate_sampler(tf.expand_dims(tf.to_int64(self.output),axis=-1), 1, neg_sample_size, True, 
+			dictionary_size, unigrams=count)
 
 		l2_loss = tf.constant(0.0)
 		l2_loss += tf.nn.l2_loss(W)
 
 		# prediction and loss function
-		self.losses = tf.nn.nce_loss(W, b, x_emb_in, tf.expand_dims(tf.convert_to_tensor(self.output),axis=-1), neg_sample_size, dictionary_size, sampled_values=neg_sample)
+		self.losses = tf.nn.nce_loss(W, b, x_emb_in, tf.expand_dims(self.output,axis=-1), neg_sample_size, dictionary_size, sampled_values=neg_sample)
 		self.loss = tf.reduce_mean(self.losses) + l2_reg_lambda*l2_loss
 
 		session_conf = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
@@ -58,6 +55,7 @@ class Word2vec(object):
     		# print ("step "+str(step) + " loss "+str(loss))
     		return W_e,loss
 
+
 with open('./data/train_data.pickle', 'rb') as handle:
 	dictionary = pickle.load(handle)
 	reverse_dictionary = pickle.load(handle)
@@ -69,17 +67,29 @@ for word in count:
 	unigram_counts.append(word[1])
 
 w2v = Word2vec(len(dictionary),unigram_counts)
-no_of_epochs=5
+num_epochs = 5
+num_train = len(data) - 4
+batch_size = 5000
+num_batches = num_train//batch_size
+window = 5
 
 W = []
-total_loss = 0
-for j in xrange(no_of_epochs):
-	for i in xrange(len(data)-4):
-		temp_list=[data[i], data[i+1], data[i+2], data[i+3], data[i+4]]
-		tmp_in=np.array(temp_list,dtype=np.int32)
-		tmp_out=data[i+5]
-		W, loss = w2v.train_step(tmp_in,tmp_out)
-		total_loss += loss
-		if(i%1000==0):
-			print("Epoch",j+1,"Token",i,"Average loss",total_loss/1000)
-			total_loss = 0
+
+for j in range(num_epochs):
+	for i in range(num_batches):
+		x_batch = []
+		y_batch = []
+		for k in range(batch_size):
+			temp_list = []
+			for p in range(window):
+				temp_list.append(data[i*batch_size+k+p])
+		
+			x_batch.append(temp_list)	
+			y_batch.append(data[i*batch_size+k+window])
+
+		W, loss = w2v.train_step(x_batch,y_batch)
+		print("Epoch",j+1,"Batch",i+1,"Loss",loss)
+
+## Save and Load embedding
+# np.savetxt('file.txt', W, fmt='%lf')
+# W = np.loadtxt('file.txt', dtype=float)
