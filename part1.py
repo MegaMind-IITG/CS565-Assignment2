@@ -103,4 +103,5 @@ for j in range(num_epochs):
 		W, loss = nplm.train_step(x_batch,y_batch)
 		print("Epoch",j+1,"Batch",i+1,"Loss",loss)
 		
-
+if(saveWordEmb("emb_nplm_5epochs.txt",count,W)):
+	print("Embeddings saved to file.\n")
