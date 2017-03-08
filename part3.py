@@ -2,6 +2,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from helper import saveWordEmb
+
 import collections
 import math
 import zipfile
@@ -15,7 +17,7 @@ class Word2vec(object):
 	def __init__(self, dictionary_size, count, emb_size=50, window_size=5, neg_sample_size=10, learning_rate=0.01, l2_reg_lambda=0.01):
 
 		self.input  = tf.placeholder(tf.int32, [None,window_size], name="input")
-		self.output = tf.placeholder(tf.float32, [None], name="output")
+		self.output = tf.placeholder(tf.int32, [None], name="output")
 		
 		# Initialization
 		self.W_emb =  tf.Variable(tf.random_uniform([dictionary_size, emb_size], -1.0, +1.0))
@@ -25,18 +27,19 @@ class Word2vec(object):
 		x_emb_in = tf.reduce_mean(x_emb,axis=1,keep_dims=False)
 
 		# Hidden layer
-		W = tf.Variable(tf.truncated_normal([dictionary_size, emb_size],stddev=1.0 / math.sqrt(emb_size)))
-		b = tf.Variable(tf.zeros([dictionary_size]))
+		W = tf.Variable(tf.truncated_normal([dictionary_size, emb_size], stddev=0.1), name="W")
+		b = tf.Variable(tf.constant(0.1, shape=[dictionary_size]), name="b")
 
 		# Negative sampling
-		neg_sample = tf.nn.fixed_unigram_candidate_sampler(tf.expand_dims(tf.to_int64(self.output),axis=-1), 1, neg_sample_size, True, 
+		y_in = tf.expand_dims(tf.to_int64(self.output),axis=-1)
+		neg_sample = tf.nn.fixed_unigram_candidate_sampler(y_in, 1, neg_sample_size, True, 
 			dictionary_size, unigrams=count)
 
 		l2_loss = tf.constant(0.0)
 		l2_loss += tf.nn.l2_loss(W)
 
 		# prediction and loss function
-		self.losses = tf.nn.nce_loss(W, b, x_emb_in, tf.expand_dims(self.output,axis=-1), neg_sample_size, dictionary_size, sampled_values=neg_sample)
+		self.losses = tf.nn.nce_loss(W, b, tf.to_float(y_in), x_emb_in, neg_sample_size, dictionary_size, sampled_values=neg_sample)
 		self.loss = tf.reduce_mean(self.losses) + l2_reg_lambda*l2_loss
 
 		session_conf = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
@@ -67,7 +70,7 @@ for word in count:
 	unigram_counts.append(word[1])
 
 w2v = Word2vec(len(dictionary),unigram_counts)
-num_epochs = 5
+num_epochs = 50
 num_train = len(data) - 4
 batch_size = 5000
 num_batches = num_train//batch_size
@@ -90,6 +93,6 @@ for j in range(num_epochs):
 		W, loss = w2v.train_step(x_batch,y_batch)
 		print("Epoch",j+1,"Batch",i+1,"Loss",loss)
 
-## Save and Load embedding
-# np.savetxt('file.txt', W, fmt='%lf')
-# W = np.loadtxt('file.txt', dtype=float)
+
+if(saveWordEmb("emb_w2v_50epochs.txt",count,W)):
+	print("Embeddings saved to file.\n")
