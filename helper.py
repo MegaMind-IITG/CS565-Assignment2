@@ -23,3 +23,16 @@ def readWordEmb(word_dict, fname, embSize=50):
 	wordemb = np.asarray(wordemb, dtype='float32')
 	print "Number of unknown words in word embedding", count
 	return wordemb
+
+def saveWordEmb(filename,count,W):
+	emb = []
+	for i in range(len(W)):
+		word = count[i][0]
+		wordemb = W[i]
+		x = ' '.join(str(e) for e in wordemb)
+		embed = word + ' ' + x
+		emb.append(embed)
+	fp = open(filename, 'w')
+	for item in emb:
+		fp.write("%s\n" % item)
+	return True
