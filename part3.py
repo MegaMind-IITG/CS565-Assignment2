@@ -70,7 +70,7 @@ for word in count:
 	unigram_counts.append(word[1])
 
 w2v = Word2vec(len(dictionary),unigram_counts)
-num_epochs = 50
+num_epochs = 500
 num_train = len(data) - 4
 batch_size = 5000
 num_batches = num_train//batch_size
@@ -94,5 +94,5 @@ for j in range(num_epochs):
 		print("Epoch",j+1,"Batch",i+1,"Loss",loss)
 
 
-if(saveWordEmb("emb_w2v_50epochs.txt",count,W)):
+if(saveWordEmb("emb_w2v_500epochs.txt",count,W)):
 	print("Embeddings saved to file.\n")
