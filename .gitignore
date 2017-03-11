@@ -1,0 +1,4 @@
+data/coMatrix.npz
+data/codedCoMatrix.p
+env/*
+*.pyc
