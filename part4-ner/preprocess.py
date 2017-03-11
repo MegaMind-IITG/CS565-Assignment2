@@ -74,7 +74,7 @@ def get_input(w_ind, input_file, out_file):
 			if line in ['\n', '\r\n']:
 				continue
 			else:
-				curword = line.split()[0]
+				curword = line.split()[0].lower()
 				if curword in w_ind:
 					word = w_ind[curword]
 				else:
@@ -86,19 +86,16 @@ def get_input(w_ind, input_file, out_file):
 				
 				t = line.split()[3]
 				# Five classes 0-None,1-Person,2-Location,3-Organisation,4-Misc
-				if t.endswith('PER'):
+				if t.endswith('PERSON'):
 					entity_tag.append(0)
-				elif t.endswith('LOC'):
+				elif t.endswith('LOCATION'):
 					entity_tag.append(1)
-				elif t.endswith('ORG'):
+				elif t.endswith('ORGANIZATION'):
 					entity_tag.append(2)
-				elif t.endswith('MISC'):
+				elif t.endswith('GPE'):
 					entity_tag.append(3)
-				elif t.endswith('O'):
-					entity_tag.append(4)
 				else:
-					print("error in input tag {%s}" % t)
-					sys.exit(0)
+					entity_tag.append(4)
 	with open(out_file, 'wb') as handle:
 		pickle.dump(text,handle)
 		pickle.dump(pos_tag,handle)
@@ -107,16 +104,14 @@ def get_input(w_ind, input_file, out_file):
 		pickle.dump(entity_tag,handle)
 
 
-TRAIN_FILE = "../data/eng.train"
-DEV_FILE = "../data/eng.testa"
-TEST_FILE = "../data/eng.testb"
+TRAIN_FILE = "../data/text8.train"
+TEST_FILE = "../data/text8.test"
 
-word_emb_path = '../embeddings/emb_nplm_5epochs.txt'
+word_emb_path = '../embeddings/emb_svd.txt'
 w_ind = getWordIndex(word_emb_path)
-get_input(w_ind, TRAIN_FILE, '../data/train_set.pickle')
-get_input(w_ind, DEV_FILE, '../data/dev_set.pickle')
-get_input(w_ind, TEST_FILE, '../data/test_set.pickle')
+get_input(w_ind, TRAIN_FILE, '../data/text8_train.pickle')
+get_input(w_ind, TEST_FILE, '../data/text8_test.pickle')
 
-readWordEmb(word_emb_path,'../data/nplm.pickle')
-word_emb_path = '../embeddings/emb_w2v_50epochs.txt'
-readWordEmb(word_emb_path,'../data/w2v.pickle')
+# readWordEmb(word_emb_path,'../data/svd.pickle')
+# word_emb_path = '../embeddings/emb_w2v_50epochs.txt'
+# readWordEmb(word_emb_path,'../data/w2v.pickle')
