@@ -14,6 +14,11 @@ The obtained embeddings are saved in *embeddings/emb_nplm_5epochs.txt*
 
 ## Singular Value Decomposition
 
+There are four main file associated with Part 2:
+* `coOccure.py` : This file will load the pre-processed data obtained from `preprocess.py` and obtain a co-occurence matrix from the ordered list of tokens. There is a global variable named `WINDOW_WIDTH` that can be changed to adjust the size of the context window. It contains both types of implementation: using a library and implemenation from scratch. 
+* `svd.py` : This file is run after obtaining the co-occurrence matrix. It taken an argument to indicated whether you want to run the obtain the truncated SVD using library method or the method implemented fom scratch. 
+* `self_svd.py` : This contains the code for truncated SVD that was implemented from scratch. It implemented the algorithm proposed in [Bentbib_A.H_Kander_A](http://www.anstuocmath.ro/mathematics/anale2015vol2/Bentbib_A.H.__Kanber_A..pdf)
+* `tSNE.py` : This file takes projections as input and project vectors on 2-D plane.  
 
 ## Word2Vec
 
