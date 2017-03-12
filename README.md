@@ -36,6 +36,17 @@ The obtained embeddings are saved in *embeddings/emb_w2v_50epochs.txt*
 
 ## Evaluations of word embeddings
 
+### Using t-SNE projections
+
+We chose the words between index 100 and 200 to draw t_SNE projections. It can be run using `python part4_1.py`.
+
+Three plots are generated - *part1.png* for NPLM Model, *part2.png* for LSA model and *part3.png* for CBOW model. We also generate the closest embedding for each of the 100 words. *scikit learn* package is used for t-SNE projection.
+
+Implementation details:
+* No. of components: 2 (Dimension of the embedded space)
+* Perplexity: 30
+* No. of iterations: 5000
+
 ### Named Entity Recognition (NER)
 
 #### Generating the dataset
